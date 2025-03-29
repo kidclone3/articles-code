@@ -1,12 +1,12 @@
 """
-    Implementation of KafkaProducerThread and KafkaProducerSwarm classes.
-        - KafkaProducerThread: A thread that produces messages to a Kafka topic.
-        - KafkaProducerSwarm: A collection of KafkaProducerThread instances.
-    
-    Usage:
-        - Create a KafkaProducerSwarm instance with the desired settings.
-        - KafkaProducerSwarm will create a KafkaProducerThread for each fetch function.
-        - Stop the swarm to halt message production and close the producer instances.
+Implementation of KafkaProducerThread and KafkaProducerSwarm classes.
+    - KafkaProducerThread: A thread that produces messages to a Kafka topic.
+    - KafkaProducerSwarm: A collection of KafkaProducerThread instances.
+
+Usage:
+    - Create a KafkaProducerSwarm instance with the desired settings.
+    - KafkaProducerSwarm will create a KafkaProducerThread for each fetch function.
+    - Stop the swarm to halt message production and close the producer instances.
 """
 
 import json
@@ -109,16 +109,30 @@ class KafkaProducerSwarm:
 
 
 def create_producer() -> KafkaProducer:
-    """Initializes and returns a KafkaProducer instance."""
-    return KafkaProducer(
-        bootstrap_servers=settings.UPSTASH_KAFKA_ENDPOINT,
-        sasl_mechanism=settings.UPSTASH_KAFKA_SASL_MECHANISM,
-        security_protocol=settings.UPSTASH_KAFKA_SECURITY_PROTOCOL,
-        sasl_plain_username=settings.UPSTASH_KAFKA_UNAME,
-        sasl_plain_password=settings.UPSTASH_KAFKA_PASS,
-        api_version_auto_timeout_ms=100000,
-        value_serializer=lambda v: json.dumps(v).encode("utf-8"),
-    )
+    """Initializes and returns a KafkaProducer instance for local Docker Kafka."""
+    use_local = settings.USE_LOCAL_KAFKA  # Set to True for Docker, False for Upstash
+    if use_local:
+        return KafkaProducer(
+            bootstrap_servers="localhost:9092",
+            value_serializer=lambda v: json.dumps(v).encode("utf-8"),
+            # Docker Kafka doesn't need authentication
+            # Add these parameters to improve connection reliability
+            connections_max_idle_ms=5000,
+            request_timeout_ms=30000,
+            retry_backoff_ms=500,
+            max_block_ms=60000,
+        )
+    else:
+        # Original Upstash connection
+        return KafkaProducer(
+            bootstrap_servers=settings.UPSTASH_KAFKA_ENDPOINT,
+            sasl_mechanism=settings.UPSTASH_KAFKA_SASL_MECHANISM,
+            security_protocol=settings.UPSTASH_KAFKA_SECURITY_PROTOCOL,
+            sasl_plain_username=settings.UPSTASH_KAFKA_UNAME,
+            sasl_plain_password=settings.UPSTASH_KAFKA_PASS,
+            api_version_auto_timeout_ms=100000,
+            value_serializer=lambda v: json.dumps(v).encode("utf-8"),
+        )
 
 
 def main():

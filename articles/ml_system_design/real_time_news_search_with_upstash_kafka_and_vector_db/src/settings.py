@@ -4,12 +4,11 @@ from pydantic_settings import SettingsConfigDict, BaseSettings
 import os
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
+env_path = os.path.join(os.path.dirname(dir_path), ".env")
 
 
 class AppSettings(BaseSettings):
-    model_config = SettingsConfigDict(
-        env_file=os.path.join(dir_path, "..", "./.env"), env_file_encoding="utf-8"
-    )
+    model_config = SettingsConfigDict(env_file=env_path, extra="ignore")
 
     UPSTASH_KAFKA_UNAME: str
     UPSTASH_KAFKA_PASS: str
@@ -35,5 +34,9 @@ class AppSettings(BaseSettings):
     EMBEDDING_MODEL_MAX_INPUT_LENGTH: int = 384
     EMBEDDING_MODEL_DEVICE: str = "cpu"
 
+    USE_LOCAL_KAFKA: bool = True
+
 
 settings = AppSettings()
+if __name__ == "__main__":
+    print(settings.model_dump(mode="python"))

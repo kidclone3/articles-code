@@ -32,15 +32,8 @@ list: help
 
 
 install:
-	@echo "$(GREEN) [CONDA] Creating [$(ENV_NAME)] python env $(RESET)"
-	conda create --name $(ENV_NAME) python=3.9 -y
-	@echo "Activating the environment..."
-	@bash -c "source $$(conda info --base)/etc/profile.d/conda.sh && conda activate $(ENV_NAME) \
-			&& pip install poetry \
-			poetry env use $(which python)"
-	@echo "Installing Packages"
-	@echo "Changing to pyproject.toml location..."
-	@bash -c " PYTHON_KEYRING_BACKEND=keyring.backends.fail.Keyring poetry install"
+	@echo "$(GREEN) [POETRY] Installing dependencies $(RESET)"
+	@bash -c "PYTHON_KEYRING_BACKEND=keyring.backends.fail.Keyring poetry install"
 test:
 	@echo "$(GREEN) [TESTING] Running UnitTests $(RESET)"
 	@bash -c "poetry run pytest tests/"

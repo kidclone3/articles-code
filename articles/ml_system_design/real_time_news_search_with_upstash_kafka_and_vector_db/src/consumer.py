@@ -12,22 +12,35 @@ logger = get_logger(__name__)
 
 def build_kafka_stream_client():
     """
-    Build a Kafka stream client to read messages from the Upstash Kafka topic using the ByteWax KafkaSource connector.
+    Build a Kafka stream client to read messages from local Docker Kafka using ByteWax KafkaSource connector.
     """
-    kafka_config = {
-        "bootstrap.servers": settings.UPSTASH_KAFKA_ENDPOINT,
-        "security.protocol": "SASL_SSL",
-        "sasl.mechanisms": "SCRAM-SHA-256",
-        "sasl.username": settings.UPSTASH_KAFKA_UNAME,
-        "sasl.password": settings.UPSTASH_KAFKA_PASS,
-        "auto.offset.reset": "earliest",  # Start reading at the earliest message
-    }
+    kafka_config = (
+        {
+            "bootstrap.servers": "localhost:9092",
+            "auto.offset.reset": "earliest",  # Start reading at the earliest message
+            "group.id": "news-consumer-group",  # Add consumer group for local testing
+        }
+        if settings.USE_LOCAL_KAFKA
+        else {
+            "bootstrap.servers": settings.UPSTASH_KAFKA_ENDPOINT,
+            "security.protocol": "SASL_SSL",
+            "sasl.mechanisms": "SCRAM-SHA-256",
+            "sasl.username": settings.UPSTASH_KAFKA_UNAME,
+            "sasl.password": settings.UPSTASH_KAFKA_PASS,
+            "auto.offset.reset": "earliest",
+        }
+    )
+
     kafka_input = KafkaSource(
         topics=[settings.UPSTASH_KAFKA_TOPIC],
-        brokers=[settings.UPSTASH_KAFKA_ENDPOINT],
+        brokers=["localhost:9092"]
+        if settings.USE_LOCAL_KAFKA
+        else [settings.UPSTASH_KAFKA_ENDPOINT],
         add_config=kafka_config,
     )
-    logger.info("KafkaSource client created successfully.")
+    logger.info(
+        f"KafkaSource client created successfully for {'local' if settings.USE_LOCAL_KAFKA else 'Upstash'} Kafka"
+    )
     return kafka_input
 
 
